@@ -40,7 +40,7 @@ Some combinations of the above are possible: for example, the part of our site u
 scheme (language prefix in URL), and the other part uses the second scheme (user private zone,
 where no URL prefix is required).
 
-*Vue i18n mini* tries to cover all these use-cases.
+**Vue i18n mini** tries to cover all these use-cases.
 Let's take a look at how to use it in practice.
 
 ### Configure
