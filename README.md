@@ -45,12 +45,12 @@ Let's take a look at how to use it in practice.
 
 ### Configure
 
-```js
-// i18n.js
+`i18n.js`
 
+```js
 import {createI18n} from 'vue-i18n-mini'
 
-const i18n = createI18n({
+export const i18n = createI18n({
   defaultLang: 'en',
   fallbackLang: 'en',
   langData: {
@@ -66,19 +66,20 @@ const i18n = createI18n({
 
 The `defaultLang` and `langData` options are required.
 
-The `defaultLang` will be used if finding the best language for the user has failed.
-Also, [when using router](),
-you can omit the language prefix in URL for the default language.
+The `defaultLang` will be used if no best language for the user has been found.
+Also, [in case you are using prefixes](#router),
+you will be able to omit the language prefix in URL for the default language.
 
+The `fallbackLang` will be used for missing messages 
 If some message was not found in the current language, it will try to find it in `fallbackLang`.
 If no `fallbackLang` is specified
 
 
 Now, plug it in:
 
-```js
-// app.js
+`app.js`
 
+```js
 import {createApp} from 'vue'
 import {i18n} from './i18n'
 
