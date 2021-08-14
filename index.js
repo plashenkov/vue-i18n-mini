@@ -42,7 +42,7 @@ export function createI18n(options) {
     langData: null,
     defaultLang: null,
     fallbackLang: null,
-    preferredLangHandler: null,
+    store: null,
     routerOptions: {
       prefixParam: 'lang',
       prefixForDefaultLang: true,
@@ -62,12 +62,12 @@ export function createI18n(options) {
     throw new Error('Please define options.defaultLang')
   }
 
-  if (!options.preferredLangHandler) {
-    options.preferredLangHandler = {
-      async set(lang) {
+  if (!options.store) {
+    options.store = {
+      async save(lang) {
         cookie.set('lang', lang, {expires: 365})
       },
-      async get() {
+      async load() {
         const lang = cookie.get('lang')
         lang && cookie.set('lang', lang, {expires: 365})
         return lang
@@ -120,12 +120,20 @@ export function createI18n(options) {
 
   async function savePreferred(lang) {
     preferredLang = lang
-    return await options.preferredLangHandler.set(lang)
+    return (
+      options.store &&
+      options.store.save &&
+      await options.store.save(lang)
+    )
   }
 
   async function preferred() {
     if (preferredLang !== undefined) return preferredLang
-    preferredLang = await options.preferredLangHandler.get() || null
+    preferredLang = (
+      options.store &&
+      options.store.load &&
+      await options.store.load()
+    ) || null
     return preferredLang
   }
 
