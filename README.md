@@ -1,4 +1,4 @@
-# vue-i18n-mini
+# Vue i18n mini
 
 This package provides a minimalistic (but complete), very lightweight, easy-to-use i18n solution
 for Vue 3.
