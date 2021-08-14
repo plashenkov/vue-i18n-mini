@@ -23,24 +23,27 @@ Usually you may want to use i18n according to the following scenarios:
 1. A language prefix in URL defines the current language.
    For example, this is the front site where SEO / SSR are desired.
    No prefix means either the default language or we must find the best
-   language and redirect the user to it.
+   possible language and redirect the user to it.
 
-2. The current language is defined by the browser option (browsers have languages
-   ordered by preference option). Additionally, we may want to provide an ability
-   to an end user to choose and save the different language of his preference.
-   In this case, we can store this preference, say, in cookie or in localStorage.
+2. We do not use language prefix in URLs, but define the best possible language taking
+   into account the browser option (browsers have languages ordered by preference option).
+   Additionally to this, we can provide to an end user the ability to choose and save
+   the different language from our list. In this case, we can store this preference, say,
+   in cookie or in localStorage.
 
-3. The current language may _initially_ be defined by the browser option (as in the
-   previous scenario), but most of the time we rely on the profile option of a logged in user.
-   It is usually stored on the server (although it can be cached on the browser side, of course).
+3. The current language may _initially_ be defined taking into account the browser option
+   (as in the previous scenario), but most of the time we rely on the profile option
+   of a logged in user. It is usually stored on the server (although it can be cached
+   on the browser side, of course).
 
 Some combinations of the above are possible: for example, the part of our site uses the first
 scheme (language prefix in URL), and the other part uses the second scheme (user private zone,
 where no URL prefix is required).
 
 *Vue i18n mini* tries to cover all these use-cases.
+Let's take a look at how to use it in practice.
 
-Configure:
+### Configure
 
 ```js
 // i18n.js
