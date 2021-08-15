@@ -78,7 +78,7 @@ If not set or null, such fallback does not occur.
 
 `langData` contains all the available languages and messages. Actually, **it's recommended
 to always lazy-load translations** instead of including them directly. In this case,
-they will be loaded only when they are needed:
+they will be loaded asynchronously only when they are needed:
 
 ```js
 import {createI18n} from 'vue-i18n-mini'
