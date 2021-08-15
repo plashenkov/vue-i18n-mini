@@ -1,12 +1,12 @@
 {
   "name": "vue-i18n-mini",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Minimalistic, lightweight, easy-to-use i18n solution for Vue 3",
   "author": "Yuri Plashenkov",
   "license": "MIT",
   "repository": "github:plashenkov/vue-i18n-mini",
   "homepage": "https://github.com/plashenkov/vue-i18n-mini",
-  "main": "index.js",
+  "main": "src/index.js",
   "dependencies": {
     "js-cookie": "^3.0.0",
     "lodash": "^4.17.21",
