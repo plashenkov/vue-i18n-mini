@@ -35,7 +35,8 @@ Usually you may want to use internationalization according to the following scen
    defined by browser's preference: the browser gives ordered list of preferred languages,
    so we use it to find the best suited language. Additionally to this, an end user
    usually can choose the different language from our list, and we store this preference,
-   say, in cookie or in localStorage.
+   say, in cookie or in localStorage. Later we will use it first, and if it is not present,
+   we will read browser's preference again.
 
 3. The current language may _initially_ be defined based on the browser's preference
    (exactly as in the previous scenario), but actually we rely on a profile option
@@ -50,8 +51,6 @@ where no URL prefix is required).
 Let's take a look at how to use it in practice.
 
 ### Configure
-
-Create `i18n.js`:
 
 ```js
 import {createI18n} from 'vue-i18n-mini'
@@ -70,16 +69,16 @@ export const i18n = createI18n({
 })
 ```
 
-The `defaultLang` and `langData` options are required.
+The `defaultLang` and `langData` are the only required options.
 
-The `defaultLang` will be used if no better languages found to meet user's preferences.
+The `defaultLang` will be used if no better languages available to meet user's preference.
 
-The `fallbackLang` is a language to use if translations in current language are not available.
-If not set, fallback does not occur.
+The `fallbackLang` is a language to use if translations in the current language are not available.
+If not set or null, such fallback does not occur.
 
-`langData` contains all the available messages. Actually, **it's recommended to always lazy-load
-translations** instead of including them directly. In this case, they will be loaded only when 
-they are needed:
+`langData` contains all the available languages and messages. Actually, **it's recommended
+to always lazy-load translations** instead of including them directly. In this case,
+they will be loaded only when they are needed:
 
 ```js
 import {createI18n} from 'vue-i18n-mini'
@@ -96,8 +95,6 @@ export const i18n = createI18n({
 
 Now, plug it in:
 
-`app.js`
-
 ```js
 import {createApp} from 'vue'
 import {i18n} from './i18n'
@@ -107,11 +104,44 @@ createApp(...)
   .mount('#app')
 ```
 
-Initialize it somewhere. This will analyze user preferred language and will pick up the most
-suitable from available ones.
+Now, if you want to use language prefixes in URLs, use router:
+
+```js
+import {createRouter} from 'vue-router'
+
+const router = createRouter({
+  // options...
+})
+
+i18n.useRouter(router)
+```
+
+_If you do not use router,_ you need to initialize the library somewhere.
+This will read user preferred (saved) language, or will try to find the best language
+based on the browser's preference. As simple as that:
 
 ```js
 i18n.init()
+```
+
+Alternatively, inside a component:
+
+```js
+export default {
+  methods: {
+    someMethod() {
+      this.$i18n.init()
+    }
+  }
+}
+```
+
+### Use
+
+```vue
+<template>
+  <div>{{$t('hello', {name: 'World'})}}</div>
+</template>
 ```
 
 ## License
