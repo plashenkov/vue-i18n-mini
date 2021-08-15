@@ -104,7 +104,7 @@ createApp(...)
   .mount('#app')
 ```
 
-Now, if you want to use language prefixes in URLs, use router:
+Now, if you want to use language prefixes in URLs, use Vue router:
 
 ```js
 import {createRouter} from 'vue-router'
@@ -116,7 +116,7 @@ const router = createRouter({
 i18n.useRouter(router)
 ```
 
-_If you do not use router,_ you need to initialize the library somewhere.
+**If you do not use router,** you need to initialize the library somewhere.
 This will read user preferred (saved) language, or will try to find the best language
 based on the browser's preference. As simple as that:
 
