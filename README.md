@@ -3,12 +3,14 @@
 This package provides a minimalistic (but complete), very lightweight,
 easy-to-use i18n solution for Vue 3.
 
-For companion library, see [Express i18n mini](https://github.com/plashenkov/express-i18n-mini)
+For companion library, see
+[Express i18n mini](https://github.com/plashenkov/express-i18n-mini)
 
 ## Features
 
 - Lightweight
 - Uses lodash template for string interpolation
+- ...
 
 ## Installation
 
@@ -18,21 +20,21 @@ npm i vue-i18n-mini
 
 ## Usage
 
-Usually you may want to use i18n according to the following scenarios:
+Usually you may want to use internationalization according to the following scenarios:
 
-1. A language prefix in URL defines the current language.
-   For example, this is the front site where SEO / SSR are desired.
-   No prefix means either the default language or we must find the best
-   possible language and redirect the user to it.
+1. A language prefix in URL defines the current language:
+   `https://example.com/en/`, `https://example.com/en-US/`, `https://example.com/de/`, etc.
+   This scenario is preferred, primarily, for the website where SEO is desired.
+   No prefix means either the default language or a redirect to a URL with a prefix.
 
-2. We do not use language prefix in URLs, but define the best possible language taking
-   into account the browser option (browsers have languages ordered by preference option).
-   Additionally to this, we can provide to an end user the ability to choose and save
-   the different language from our list. In this case, we can store this preference, say,
-   in cookie or in localStorage.
+2. We do not use language prefixes in URLs here, instead the current language is always
+   defined by browser's preference: the browser gives ordered list of preferred languages,
+   so we use it to find the best suited language. Additionally to this, an end user
+   usually can choose the different language from our list, and we store this preference,
+   say, in cookie or in localStorage.
 
-3. The current language may _initially_ be defined taking into account the browser option
-   (as in the previous scenario), but most of the time we rely on the profile option
+3. The current language may _initially_ be defined based on the browser's preference
+   (exactly as in the previous scenario), but actually we rely on a profile option
    of a logged in user. It is usually stored on the server (although it can be cached
    on the browser side, of course).
 
@@ -45,7 +47,7 @@ Let's take a look at how to use it in practice.
 
 ### Configure
 
-`i18n.js`
+Create `i18n.js`:
 
 ```js
 import {createI18n} from 'vue-i18n-mini'
@@ -66,14 +68,28 @@ export const i18n = createI18n({
 
 The `defaultLang` and `langData` options are required.
 
-The `defaultLang` will be used if no best language for the user has been found.
-Also, [in case you are using prefixes](#router),
-you will be able to omit the language prefix in URL for the default language.
+The `defaultLang` will be used if no better languages found to meet user's preferences.
+Also, when using prefixes in URL, 
 
-The `fallbackLang` will be used for missing messages 
-If some message was not found in the current language, it will try to find it in `fallbackLang`.
-If no `fallbackLang` is specified
+The `fallbackLang` is a language to use if translations in current language are not available.
+If not set, fallback does not happen.
 
+`langData` contains all the available messages. Actually, **it's recommended to lazy-load
+translations** instead of including them directly. In this case, they will be loaded only when 
+they are needed:
+
+```js
+import {createI18n} from 'vue-i18n-mini'
+
+export const i18n = createI18n({
+  defaultLang: 'en',
+  fallbackLang: 'en',
+  langData: {
+    en: () => import('./locales/en'),
+    de: () => import('./locales/de'),
+  }
+})
+```
 
 Now, plug it in:
 
