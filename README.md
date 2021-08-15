@@ -73,10 +73,9 @@ export const i18n = createI18n({
 The `defaultLang` and `langData` options are required.
 
 The `defaultLang` will be used if no better languages found to meet user's preferences.
-Also, when using prefixes in URL, 
 
 The `fallbackLang` is a language to use if translations in current language are not available.
-If not set, fallback does not happen.
+If not set, fallback does not occur.
 
 `langData` contains all the available messages. Actually, **it's recommended to lazy-load
 translations** instead of including them directly. In this case, they will be loaded only when 
