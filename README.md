@@ -23,7 +23,9 @@ npm i vue-i18n-mini
 Usually you may want to use internationalization according to the following scenarios:
 
 1. A language prefix in URL defines the current language:
-   `https://example.com/en/`, `https://example.com/en-US/`, `https://example.com/de/`, etc.
+   - https://example.com/en/
+   - https://example.com/en-US/
+   - https://example.com/de/
    This scenario is preferred, primarily, for the website where SEO is desired.
    No prefix means either the default language or a redirect to a URL with a prefix.
 
