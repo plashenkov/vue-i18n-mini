@@ -77,7 +77,7 @@ The `defaultLang` will be used if no better languages found to meet user's prefe
 The `fallbackLang` is a language to use if translations in current language are not available.
 If not set, fallback does not occur.
 
-`langData` contains all the available messages. Actually, **it's recommended to lazy-load
+`langData` contains all the available messages. Actually, **it's recommended to always lazy-load
 translations** instead of including them directly. In this case, they will be loaded only when 
 they are needed:
 
