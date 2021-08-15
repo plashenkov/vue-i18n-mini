@@ -84,6 +84,16 @@ export function createI18n(options) {
   let bestLang
   let setLangId = 0
 
+  function langSupported(lang) {
+    return lang && supportedLangs.includes(lang)
+  }
+
+  function ensureLangSupported(lang) {
+    if (!langSupported(lang)) {
+      throw new Error(`Language "${lang}" is not supported`)
+    }
+  }
+
   async function loadLangData(lang) {
     if (langData[lang] !== undefined) return
     if (typeof options.langData[lang] === 'function') {
@@ -120,6 +130,7 @@ export function createI18n(options) {
 
   async function savePreferred(lang) {
     preferredLang = lang
+
     return (
       options.store &&
       options.store.save &&
@@ -128,12 +139,20 @@ export function createI18n(options) {
   }
 
   async function preferred() {
-    if (preferredLang !== undefined) return preferredLang
+    if (preferredLang !== undefined) {
+      return preferredLang
+    }
+
     preferredLang = (
       options.store &&
       options.store.load &&
       await options.store.load()
-    ) || null
+    )
+
+    if (!langSupported(preferredLang)) {
+      preferredLang = null
+    }
+
     return preferredLang
   }
 
@@ -166,9 +185,8 @@ export function createI18n(options) {
       return !!lang.value
     },
 
-    get loading() {
-      const langs = Object.entries(langData).filter(l => l[1] === null).map(l => l[0])
-      return langs.length ? false : langs
+    get loadingLangs() {
+      return Object.entries(langData).filter(l => l[1] === null).map(l => l[0])
     },
 
     t(id, data = null) {
@@ -180,11 +198,13 @@ export function createI18n(options) {
     },
 
     async setLang(value, save = false) {
-      const id = ++setLangId
+      ensureLangSupported(value)
 
       save && savePreferred(value)
 
       if (lang.value === value) return
+
+      const id = ++setLangId
 
       if (!options.fallbackLang || value === options.fallbackLang) {
         await loadLangData(value)
@@ -198,6 +218,7 @@ export function createI18n(options) {
     },
 
     routePrefix(lang, children) {
+      ensureLangSupported(lang)
       return routePrefix([lang], lang === options.defaultLang, children)
     },
 
@@ -205,7 +226,7 @@ export function createI18n(options) {
       return routePrefix(supportedLangs, true, children)
     },
 
-    useRouter(router) {
+    useRouter(router, navigateImmediately = true) {
       if (initialized) return
       initialized = true
 
@@ -222,7 +243,8 @@ export function createI18n(options) {
           return '/' + (await preferredOrBest()) + to.fullPath
         }
 
-        this.setLang(langParam || (langParam === '' ? options.defaultLang : await preferredOrBest()))
+        const lang = langParam || (langParam === '' ? options.defaultLang : await preferredOrBest())
+        navigateImmediately ? this.setLang(lang) : await this.setLang(lang)
       })
     },
 
