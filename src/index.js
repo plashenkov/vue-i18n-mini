@@ -88,13 +88,16 @@ export function createI18n(options) {
   let setLangId = 0
 
   function langSupported(lang) {
-    return lang && supportedLangs.includes(lang)
+    if (!lang) return false
+    lang = lang.toLowerCase()
+    lang = supportedLangs.find(el => el.toLowerCase() === lang)
+    return lang || false
   }
 
   function ensureLangSupported(lang) {
-    if (!langSupported(lang)) {
-      throw new Error(`i18n: language "${lang}" is not supported`)
-    }
+    lang = langSupported(lang)
+    if (lang) return lang
+    throw new Error(`i18n: language "${lang}" is not supported`)
   }
 
   function ensureNotInitialized() {
@@ -148,15 +151,11 @@ export function createI18n(options) {
       return preferredLang
     }
 
-    preferredLang = (
+    preferredLang = langSupported(
       options.store &&
       options.store.load &&
       await options.store.load()
     )
-
-    if (!langSupported(preferredLang)) {
-      preferredLang = null
-    }
 
     return preferredLang
   }
@@ -214,7 +213,7 @@ export function createI18n(options) {
     },
 
     async setLang(value, save = false) {
-      ensureLangSupported(value)
+      value = ensureLangSupported(value)
 
       save && savePreferred(value)
 
@@ -234,7 +233,7 @@ export function createI18n(options) {
     },
 
     routePrefix(lang, children) {
-      ensureLangSupported(lang)
+      lang = ensureLangSupported(lang)
       return routePrefix([lang], lang === options.defaultLang, children)
     },
 
@@ -245,8 +244,8 @@ export function createI18n(options) {
     useRouter(router) {
       ensureNotInitialized()
       router.beforeEach(async to => {
-        const prefix = to.params[ro.prefixParam]
         const path = to.fullPath
+        const prefix = to.params[ro.prefixParam] && ensureLangSupported(to.params[ro.prefixParam])
 
         if (!ro.prefixForDefaultLang && prefix === options.defaultLang) {
           return buildURL('', path.substring(options.defaultLang.length + 1))
@@ -256,10 +255,8 @@ export function createI18n(options) {
           return buildURL(await preferredOrBest(), path)
         }
 
-        if (ro.trailingSlashes != null) {
-          const url = buildURL(prefix, prefix ? path.substring(prefix.length + 1) : path)
-          if (url !== path) return url
-        }
+        const url = buildURL(prefix, prefix ? path.substring(prefix.length + 1) : path)
+        if (url !== path) return url
 
         const lang = prefix || (prefix === '' ? options.defaultLang : await preferredOrBest())
         ro.navigateImmediately ? i18n.setLang(lang) : await i18n.setLang(lang)
@@ -280,10 +277,9 @@ export function createI18n(options) {
         setup(props, ctx) {
           let {lang, ...p} = props
 
-          if (lang) ensureLangSupported(lang)
-          else lang = i18n.getLang()
+          lang = lang ? ensureLangSupported(lang) : i18n.getLang()
 
-          if (lang === options.defaultLang && !ro.prefixForDefaultLang) lang = ''
+          if (!ro.prefixForDefaultLang && lang === options.defaultLang) lang = ''
 
           if (typeof p.to === 'string') p.to = buildURL(lang, p.to)
           else if (p.to && p.to.path !== undefined) p.to.path = buildURL(lang, p.to.path)
