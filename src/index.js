@@ -277,7 +277,7 @@ export function createI18n(options) {
 
       app.component('i18n-link', {
         props: ['to', 'lang'],
-        setup: (props, ctx) => {
+        setup(props, ctx) {
           let {lang, ...p} = props
 
           if (lang) ensureLangSupported(lang)
