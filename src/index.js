@@ -182,11 +182,11 @@ export function createI18n(options) {
   function buildURL(prefix, path) {
     const slashes = options.routerOptions.trailingSlashes
     const url = (prefix ? `/${prefix}/` : '/') + path.replace(/^\/+/, '')
-    const urlNp = url.replace(/\/+$/, '') || '/'
+    const urlNp = url.replace(/\/+$/, '')
 
     if (slashes == null) return url
-    if (!slashes || slashes === 'none') return urlNp
-    if (slashes === 'prefix') return url === `/${prefix}/` ? url : urlNp
+    if (!slashes || slashes === 'none') return urlNp || '/'
+    if (slashes === 'prefix') return url === `/${prefix}/` ? url : (urlNp || '/')
     return urlNp + '/'
   }
 
