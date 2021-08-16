@@ -1,6 +1,6 @@
 {
   "name": "vue-i18n-mini",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Minimalistic, lightweight, easy-to-use i18n solution for Vue 3",
   "author": "Yuri Plashenkov",
   "license": "MIT",

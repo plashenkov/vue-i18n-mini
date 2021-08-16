@@ -46,6 +46,8 @@ export function createI18n(options) {
     routerOptions: {
       prefixParam: 'lang',
       prefixForDefaultLang: true,
+      navigateImmediately: true,
+      trailingSlashes: null, // 'always' | 'none' | 'prefix' | null
     },
     lodashTemplateOptions: {
       interpolate: /{([\s\S]+?)}/g,
@@ -96,13 +98,10 @@ export function createI18n(options) {
 
   async function loadLangData(lang) {
     if (langData[lang] !== undefined) return
-    if (typeof options.langData[lang] === 'function') {
-      langData[lang] = null
-      const obj = await options.langData[lang]()
-      langData[lang] = obj.__esModule || obj[Symbol.toStringTag] === 'Module' ? obj.default : obj
-    } else {
-      langData[lang] = options.langData[lang]
-    }
+    langData[lang] = null
+    const data = options.langData[lang]
+    const obj = await Promise.resolve(typeof data === 'function' ? data() : data)
+    langData[lang] = (obj && (obj.__esModule || obj[Symbol.toStringTag] === 'Module')) ? obj.default : obj
   }
 
   function t(lang, id, data) {
@@ -180,6 +179,17 @@ export function createI18n(options) {
     }
   }
 
+  function buildURL(prefix, path) {
+    const slashes = options.routerOptions.trailingSlashes
+    const url = (prefix ? `/${prefix}/` : '/') + path.replace(/^\/+/, '')
+    const urlNp = url.replace(/\/+$/, '') || '/'
+
+    if (slashes == null) return url
+    if (!slashes || slashes === 'none') return urlNp
+    if (slashes === 'prefix') return url === `/${prefix}/` ? url : urlNp
+    return urlNp + '/'
+  }
+
   return {
     get initialized() {
       return !!lang.value
@@ -226,25 +236,31 @@ export function createI18n(options) {
       return routePrefix(supportedLangs, true, children)
     },
 
-    useRouter(router, navigateImmediately = true) {
+    useRouter(router) {
       if (initialized) return
       initialized = true
 
-      const prefixForDefaultLang = options.routerOptions.prefixForDefaultLang
+      const ro = options.routerOptions
 
       router.beforeEach(async to => {
-        const langParam = to.params[options.routerOptions.prefixParam]
+        const prefix = to.params[ro.prefixParam]
+        const path = to.fullPath
 
-        if (!prefixForDefaultLang && langParam === options.defaultLang) {
-          return to.fullPath.substring(options.defaultLang.length + 1)
+        if (!ro.prefixForDefaultLang && prefix === options.defaultLang) {
+          return buildURL('', path.substring(options.defaultLang.length + 1))
         }
 
-        if (prefixForDefaultLang && langParam === '') {
-          return '/' + (await preferredOrBest()) + to.fullPath
+        if (ro.prefixForDefaultLang && prefix === '') {
+          return buildURL(await preferredOrBest(), path)
         }
 
-        const lang = langParam || (langParam === '' ? options.defaultLang : await preferredOrBest())
-        navigateImmediately ? this.setLang(lang) : await this.setLang(lang)
+        if (ro.trailingSlashes != null) {
+          const url = buildURL(prefix, prefix ? path.substring(prefix.length + 1) : path)
+          if (url !== path) return url
+        }
+
+        const lang = prefix || (prefix === '' ? options.defaultLang : await preferredOrBest())
+        ro.navigateImmediately ? this.setLang(lang) : await this.setLang(lang)
       })
     },
 
