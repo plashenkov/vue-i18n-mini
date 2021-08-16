@@ -203,7 +203,7 @@ export function createI18n(options) {
       if (lang.value) return t(lang.value, id, data)
     },
 
-    get lang() {
+    getLang() {
       return lang.value
     },
 
