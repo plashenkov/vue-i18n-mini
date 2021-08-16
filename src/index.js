@@ -77,6 +77,7 @@ export function createI18n(options) {
     }
   }
 
+  const ro = options.routerOptions
   const supportedLangs = Object.keys(options.langData)
   const langData = {}
   const langTemplates = {}
@@ -173,7 +174,7 @@ export function createI18n(options) {
 
   function routePrefix(langs, optional, children) {
     return {
-      path: `/:${options.routerOptions.prefixParam}(${langs.join('|')})` + (optional ? '?' : ''),
+      path: `/:${ro.prefixParam}(${langs.join('|')})` + (optional ? '?' : ''),
       children,
       component: {
         setup() {
@@ -185,7 +186,7 @@ export function createI18n(options) {
   }
 
   function buildURL(prefix, path) {
-    const slashes = options.routerOptions.trailingSlashes
+    const slashes = ro.trailingSlashes
     const url = (prefix ? `/${prefix}/` : '/') + path.replace(/^\/+/, '')
     const urlNp = url.replace(/\/+$/, '')
 
@@ -195,7 +196,7 @@ export function createI18n(options) {
     return urlNp + '/'
   }
 
-  return {
+  const i18n = {
     get initialized() {
       return !!lang.value
     },
@@ -244,7 +245,6 @@ export function createI18n(options) {
     useRouter(router) {
       ensureNotInitialized()
       router.beforeEach(async to => {
-        const ro = options.routerOptions
         const prefix = to.params[ro.prefixParam]
         const path = to.fullPath
 
@@ -262,18 +262,39 @@ export function createI18n(options) {
         }
 
         const lang = prefix || (prefix === '' ? options.defaultLang : await preferredOrBest())
-        ro.navigateImmediately ? this.setLang(lang) : await this.setLang(lang)
+        ro.navigateImmediately ? i18n.setLang(lang) : await i18n.setLang(lang)
       })
     },
 
     async init() {
       ensureNotInitialized()
-      await this.setLang(await preferredOrBest())
+      await i18n.setLang(await preferredOrBest())
     },
 
     install(app) {
-      app.config.globalProperties.$i18n = this
-      app.config.globalProperties.$t = this.t.bind(this)
+      app.config.globalProperties.$i18n = i18n
+      app.config.globalProperties.$t = i18n.t
+
+      app.component('i18n-link', {
+        props: ['to', 'lang'],
+        setup: (props, ctx) => {
+          let {lang, ...p} = props
+
+          if (lang) ensureLangSupported(lang)
+          else lang = i18n.getLang()
+
+          if (lang === options.defaultLang && !ro.prefixForDefaultLang) lang = ''
+
+          if (typeof p.to === 'string') p.to = buildURL(lang, p.to)
+          else if (p.to && p.to.path !== undefined) p.to.path = buildURL(lang, p.to.path)
+          else if (p.to && p.to.params) p.to.params.lang = lang
+
+          const c = resolveComponent('router-link')
+          return () => h(c, p, ctx.slots.default)
+        }
+      })
     }
   }
+
+  return i18n
 }
