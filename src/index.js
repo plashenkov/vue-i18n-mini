@@ -57,11 +57,11 @@ export function createI18n(options) {
   }, options)
 
   if (!options.langData) {
-    throw new Error('Please define options.langData')
+    throw new Error('i18n: please define options.langData')
   }
 
   if (!options.defaultLang) {
-    throw new Error('Please define options.defaultLang')
+    throw new Error('i18n: please define options.defaultLang')
   }
 
   if (!options.store) {
@@ -92,8 +92,13 @@ export function createI18n(options) {
 
   function ensureLangSupported(lang) {
     if (!langSupported(lang)) {
-      throw new Error(`Language "${lang}" is not supported`)
+      throw new Error(`i18n: language "${lang}" is not supported`)
     }
+  }
+
+  function ensureNotInitialized() {
+    if (initialized) throw new Error('i18n: already initialized')
+    initialized = true
   }
 
   async function loadLangData(lang) {
@@ -237,12 +242,9 @@ export function createI18n(options) {
     },
 
     useRouter(router) {
-      if (initialized) return
-      initialized = true
-
-      const ro = options.routerOptions
-
+      ensureNotInitialized()
       router.beforeEach(async to => {
+        const ro = options.routerOptions
         const prefix = to.params[ro.prefixParam]
         const path = to.fullPath
 
@@ -265,8 +267,7 @@ export function createI18n(options) {
     },
 
     async init() {
-      if (initialized) return
-      initialized = true
+      ensureNotInitialized()
       await this.setLang(await preferredOrBest())
     },
 
