@@ -90,13 +90,12 @@ export function createI18n(options) {
   function langSupported(lang) {
     if (!lang) return false
     lang = lang.toLowerCase()
-    lang = supportedLangs.find(el => el.toLowerCase() === lang)
-    return lang || false
+    return supportedLangs.find(el => el.toLowerCase() === lang) || false
   }
 
   function ensureLangSupported(lang) {
-    lang = langSupported(lang)
-    if (lang) return lang
+    const found = langSupported(lang)
+    if (found) return found
     throw new Error(`i18n: language "${lang}" is not supported`)
   }
 
