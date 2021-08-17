@@ -1,4 +1,4 @@
-import {resolveComponent, h, ref} from 'vue'
+import {resolveComponent, h, ref, computed} from 'vue'
 import template from 'lodash/template'
 import merge from 'lodash/merge'
 import get from 'lodash/get'
@@ -274,18 +274,19 @@ export function createI18n(options) {
       app.component('i18n-link', {
         props: ['to', 'lang'],
         setup(props, ctx) {
-          let {lang, ...p} = props
+          const p = computed(() => {
+            let {lang, ...p} = props
+            lang = lang ? ensureLangSupported(lang) : i18n.getLang()
 
-          lang = lang ? ensureLangSupported(lang) : i18n.getLang()
+            if (!ro.prefixForDefaultLang && lang === options.defaultLang) lang = ''
 
-          if (!ro.prefixForDefaultLang && lang === options.defaultLang) lang = ''
-
-          if (typeof p.to === 'string') p.to = buildURL(lang, p.to)
-          else if (p.to && p.to.path !== undefined) p.to.path = buildURL(lang, p.to.path)
-          else if (p.to && p.to.params) p.to.params.lang = lang
+            if (typeof p.to === 'string') p.to = buildURL(lang, p.to)
+            else if (p.to && p.to.path !== undefined) p.to.path = buildURL(lang, p.to.path)
+            else if (p.to && p.to.params) p.to.params.lang = lang
+          })
 
           const c = resolveComponent('router-link')
-          return () => h(c, p, ctx.slots.default)
+          return () => h(c, p.value, ctx.slots.default)
         }
       })
     }
