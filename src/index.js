@@ -283,6 +283,8 @@ export function createI18n(options) {
             if (typeof p.to === 'string') p.to = buildURL(lang, p.to)
             else if (p.to && p.to.path !== undefined) p.to.path = buildURL(lang, p.to.path)
             else if (p.to && p.to.params) p.to.params.lang = lang
+
+            return p
           })
 
           const c = resolveComponent('router-link')
