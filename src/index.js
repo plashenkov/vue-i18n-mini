@@ -37,6 +37,15 @@ function findBestLangs(preferredLangs, supportedLangs) {
     .map(lang => lang.l)
 }
 
+function acceptLanguageToArray(str) {
+  return str.toString()
+    .split(',')
+    .map(el => el.split(';'))
+    .map(el => [el[0], el[1] && parseFloat(el[1].split('=')[1]) || 1])
+    .sort((a, b) => b[1] - a[1])
+    .map(el => el[0])
+}
+
 export function createI18n(options) {
   options = merge({
     langData: null,
@@ -152,6 +161,7 @@ export function createI18n(options) {
     async init(instanceOptions = {}) {
       instanceOptions = merge({
         acceptLanguage: null,
+        request: null,
         router: null,
       }, instanceOptions)
 
@@ -165,15 +175,11 @@ export function createI18n(options) {
       if (Array.isArray(io.acceptLanguage)) {
         acceptLanguages = io.acceptLanguage
       } else if (io.acceptLanguage) {
-        acceptLanguages = io.acceptLanguage
-          .toString()
-          .split(',')
-          .map(el => el = el.split(';'))
-          .map(el => [el[0], el[1] && parseInt(el[1].split('=')[1]) || 1])
-          .sort((a, b) => a[1] > b[1])
-          .map(el => el[0])
+        acceptLanguages = acceptLanguageToArray(io.acceptLanguage)
+      } else if (import.meta.env.SSR) {
+        acceptLanguages = io.request ? acceptLanguageToArray(io.request.headers['accept-language']) : []
       } else {
-        acceptLanguages = import.meta.env.SSR ? [] : (navigator.languages || [navigator.language])
+        acceptLanguages = navigator.languages || [navigator.language]
       }
 
       async function savePreferred(lang) {
