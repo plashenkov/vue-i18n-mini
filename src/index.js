@@ -1,4 +1,4 @@
-import {resolveComponent, h, ref, computed} from 'vue'
+import {resolveComponent, h, ref, computed, inject} from 'vue'
 import template from 'lodash/template'
 import merge from 'lodash/merge'
 import get from 'lodash/get'
@@ -38,6 +38,7 @@ function findBestLangs(preferredLangs, supportedLangs) {
 }
 
 function acceptLanguageToArray(str) {
+  if (!str) return []
   return str.toString()
     .split(',')
     .map(el => el.split(';'))
@@ -45,6 +46,8 @@ function acceptLanguageToArray(str) {
     .sort((a, b) => b[1] - a[1])
     .map(el => el[0])
 }
+
+const injectKey = Symbol()
 
 export function createI18n(options) {
   options = merge({
@@ -56,6 +59,7 @@ export function createI18n(options) {
       prefixParam: 'lang',
       prefixForDefaultLang: true,
       trailingSlashes: null, // 'always' | 'none' | 'prefix' | null
+      notFoundRouteName: /not.*found/i,
     },
     lodashTemplateOptions: {
       interpolate: /{([\s\S]+?)}/g,
@@ -89,6 +93,13 @@ export function createI18n(options) {
   const supportedLangs = Object.keys(options.langData)
   const langData = {}
   const langTemplates = {}
+  const notFoundRouteNames = Array.isArray(ro.notFoundRouteName)
+    ? ro.notFoundRouteName
+    : [ro.notFoundRouteName]
+
+  function isNotFound(name) {
+    return notFoundRouteNames.some(el => el instanceof RegExp ? el.test(name) : el === name)
+  }
 
   function langSupported(lang) {
     if (!lang) return false
@@ -158,51 +169,27 @@ export function createI18n(options) {
   }
 
   return {
-    async init(instanceOptions = {}) {
-      instanceOptions = merge({
-        acceptLanguage: null,
-        request: null,
-        router: null,
-      }, instanceOptions)
-
+    async init(ctx = {}) {
       const lang = ref(null)
-      const io = instanceOptions
       let preferredLang
       let bestLang
       let setLangId = 0
       let acceptLanguages
 
-      if (Array.isArray(io.acceptLanguage)) {
-        acceptLanguages = io.acceptLanguage
-      } else if (io.acceptLanguage) {
-        acceptLanguages = acceptLanguageToArray(io.acceptLanguage)
-      } else if (import.meta.env.SSR) {
-        acceptLanguages = io.request ? acceptLanguageToArray(io.request.headers['accept-language']) : []
+      if (import.meta.env.SSR) {
+        acceptLanguages = acceptLanguageToArray(ctx.request?.headers?.['accept-language'])
       } else {
         acceptLanguages = navigator.languages || [navigator.language]
       }
 
       async function savePreferred(lang) {
         preferredLang = lang
-
-        return (
-          options.store &&
-          options.store.save &&
-          await options.store.save(lang)
-        )
+        return options.store?.save && await options.store.save(lang)
       }
 
       async function preferred() {
-        if (preferredLang !== undefined) {
-          return preferredLang
-        }
-
-        preferredLang = langSupported(
-          options.store &&
-          options.store.load &&
-          await options.store.load()
-        )
-
+        if (preferredLang !== undefined) return preferredLang
+        preferredLang = langSupported(options.store?.load && await options.store.load())
         return preferredLang
       }
 
@@ -257,45 +244,60 @@ export function createI18n(options) {
         install(app) {
           app.config.globalProperties.$i18n = i18n
           app.config.globalProperties.$t = i18n.t
-
-          app.component('i18n-link', {
+          app.provide(injectKey, i18n)
+          app.component('I18nLink', {
             props: ['to', 'lang'],
             setup(props, ctx) {
-              const p = computed(() => {
-                let {lang, ...p} = props
+              const ps = computed(() => {
+                let {lang, ...ps} = props
                 lang = lang ? ensureLangSupported(lang) : i18n.getLang()
 
                 if (!ro.prefixForDefaultLang && lang === options.defaultLang) lang = ''
 
-                if (typeof p.to === 'string') p.to = buildURL(lang, p.to)
-                else if (p.to && p.to.path !== undefined) p.to.path = buildURL(lang, p.to.path)
-                else if (p.to && p.to.params) p.to.params.lang = lang
+                if (typeof ps.to === 'string') ps.to = buildURL(lang, ps.to)
+                else if (ps.to?.path !== undefined) ps.to.path = buildURL(lang, ps.to.path)
+                else if (ps.to?.params) ps.to.params.lang = lang
 
-                return p
+                return ps
               })
 
               const c = resolveComponent('router-link')
-              return () => h(c, p.value, ctx.slots.default)
+              return () => h(c, ps.value, ctx.slots.default)
             }
           })
         }
       }
 
-      if (io.router) {
-        io.router.beforeEach(async to => {
+      if (ctx.router) {
+        function redirect(url) {
+          import.meta.env.SSR && ctx.redirect?.(url, 302)
+          return url
+        }
+
+        function notFound() {
+          import.meta.env.SSR && ctx.writeResponse?.({status: 404})
+        }
+
+        ctx.router.beforeEach(async to => {
           const path = to.fullPath
           const prefix = to.params[ro.prefixParam] && ensureLangSupported(to.params[ro.prefixParam])
 
-          if (!ro.prefixForDefaultLang && prefix === options.defaultLang) {
-            return buildURL('', path.substring(options.defaultLang.length + 1))
-          }
+          if (isNotFound(to.name)) {
+            notFound()
+          } else {
+            if (!ro.prefixForDefaultLang && prefix === options.defaultLang) {
+              const url = buildURL('', path.substring(options.defaultLang.length + 1))
+              return redirect(url)
+            }
 
-          if (ro.prefixForDefaultLang && prefix === '') {
-            return buildURL(await preferredOrBest(), path)
-          }
+            if (ro.prefixForDefaultLang && prefix === '') {
+              const url = buildURL(await preferredOrBest(), path)
+              return redirect(url)
+            }
 
-          const url = buildURL(prefix, prefix ? path.substring(prefix.length + 1) : path)
-          if (url !== path) return url
+            const url = buildURL(prefix, prefix ? path.substring(prefix.length + 1) : path)
+            if (url !== path) return redirect(url)
+          }
 
           await i18n.setLang(prefix || (prefix === '' ? options.defaultLang : await preferredOrBest()))
         })
@@ -315,4 +317,8 @@ export function createI18n(options) {
       return routePrefix(supportedLangs, true, children)
     },
   }
+}
+
+export function useI18n() {
+  return inject(injectKey)
 }
