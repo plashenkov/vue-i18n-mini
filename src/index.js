@@ -170,17 +170,22 @@ export function createI18n(options) {
 
   return {
     async init(ctx = {}) {
-      const lang = ref(null)
+      ctx = merge({
+        isClient: true,
+        request: null,
+        redirect: null,
+        writeResponse: null,
+        router: null,
+      }, ctx)
+
       let preferredLang
       let bestLang
       let setLangId = 0
-      let acceptLanguages
 
-      if (import.meta.env.SSR) {
-        acceptLanguages = acceptLanguageToArray(ctx.request?.headers?.['accept-language'])
-      } else {
-        acceptLanguages = navigator.languages || [navigator.language]
-      }
+      const lang = ref(null)
+      const acceptLanguages = ctx.isClient
+        ? navigator.languages || [navigator.language]
+        : acceptLanguageToArray(ctx.request?.headers?.['accept-language'])
 
       async function savePreferred(lang) {
         preferredLang = lang
@@ -270,12 +275,12 @@ export function createI18n(options) {
 
       if (ctx.router) {
         function redirect(url) {
-          import.meta.env.SSR && ctx.redirect?.(url, 302)
+          !ctx.isClient && ctx.redirect?.(url, 302)
           return url
         }
 
         function notFound() {
-          import.meta.env.SSR && ctx.writeResponse?.({status: 404})
+          !ctx.isClient && ctx.writeResponse?.({status: 404})
         }
 
         ctx.router.beforeEach(async to => {
