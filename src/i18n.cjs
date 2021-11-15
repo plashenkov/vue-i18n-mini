@@ -1,8 +1,8 @@
-import {resolveComponent, h, ref, computed, inject} from 'vue'
-import template from 'lodash/template'
-import merge from 'lodash/merge'
-import get from 'lodash/get'
-import cookie from 'js-cookie'
+const {resolveComponent, h, ref, computed, inject} = require('vue')
+const template = require('lodash/template')
+const merge = require('lodash/merge')
+const get = require('lodash/get')
+const cookie = require('js-cookie')
 
 function findBestLangs(preferredLangs, supportedLangs) {
   const result = []
@@ -49,7 +49,7 @@ function acceptLanguageToArray(str) {
 
 const injectKey = Symbol()
 
-export function createI18n(options) {
+exports.createI18n = function (options) {
   options = merge({
     langData: null,
     defaultLang: null,
@@ -171,6 +171,7 @@ export function createI18n(options) {
   return {
     async init(ctx = {}) {
       ctx = merge({
+        isClient: true,
         request: null,
         redirect: null,
         writeResponse: null,
@@ -182,9 +183,9 @@ export function createI18n(options) {
       let setLangId = 0
 
       const lang = ref(null)
-      const acceptLanguages = import.meta.env.SSR
-        ? acceptLanguageToArray(ctx.request?.headers?.['accept-language'])
-        : navigator.languages || [navigator.language]
+      const acceptLanguages = ctx.isClient
+        ? navigator.languages || [navigator.language]
+        : acceptLanguageToArray(ctx.request?.headers?.['accept-language'])
 
       async function savePreferred(lang) {
         preferredLang = lang
@@ -274,12 +275,12 @@ export function createI18n(options) {
 
       if (ctx.router) {
         function redirect(url) {
-          import.meta.env.SSR && ctx.redirect?.(url, 302)
+          ctx.isClient || ctx.redirect?.(url, 302)
           return url
         }
 
         function notFound() {
-          import.meta.env.SSR && ctx.writeResponse?.({status: 404})
+          ctx.isClient || ctx.writeResponse?.({status: 404})
         }
 
         ctx.router.beforeEach(async to => {
@@ -323,6 +324,6 @@ export function createI18n(options) {
   }
 }
 
-export function useI18n() {
+exports.useI18n = function () {
   return inject(injectKey)
 }
