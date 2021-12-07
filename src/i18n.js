@@ -48,8 +48,19 @@ function acceptLanguageToArray(str) {
 }
 
 const injectKey = Symbol()
+const factories = []
 
-export function createI18n(options) {
+function ensureI18nConfigured() {
+  if (!factories.length) {
+    throw new Error('vue-i18n-mini: please call configureI18n() first')
+  }
+
+  if (factories.length > 1) {
+    throw new Error('vue-i18n-mini: more than one configuration found, please use configuration object method directly instead')
+  }
+}
+
+export function configureI18n(options) {
   options = merge({
     langData: null,
     defaultLang: null,
@@ -69,11 +80,11 @@ export function createI18n(options) {
   }, options)
 
   if (!options.langData) {
-    throw new Error('i18n: please define options.langData')
+    throw new Error('vue-i18n-mini: please define options.langData')
   }
 
   if (!options.defaultLang) {
-    throw new Error('i18n: please define options.defaultLang')
+    throw new Error('vue-i18n-mini: please define options.defaultLang')
   }
 
   if (!options.store) {
@@ -110,7 +121,7 @@ export function createI18n(options) {
   function ensureLangSupported(lang) {
     const found = langSupported(lang)
     if (found) return found
-    throw new Error(`i18n: language "${lang}" is not supported`)
+    throw new Error(`vue-i18n-mini: language "${lang}" is not supported`)
   }
 
   async function loadLangData(lang) {
@@ -168,8 +179,8 @@ export function createI18n(options) {
     return urlNp + '/'
   }
 
-  return {
-    async init(ctx = {}) {
+  const factory = {
+    async createI18n(ctx = {}) {
       ctx = merge({
         isClient: true,
         request: null,
@@ -322,6 +333,25 @@ export function createI18n(options) {
       return routePrefix(supportedLangs, true, children)
     },
   }
+
+  factories.push(factory)
+
+  return factory
+}
+
+export async function createI18n(ctx = {}) {
+  ensureI18nConfigured()
+  return factories[0].createI18n(ctx)
+}
+
+export function routePrefix(lang, children) {
+  ensureI18nConfigured()
+  return factories[0].routePrefix(lang, children)
+}
+
+export function universalRoutePrefix(children) {
+  ensureI18nConfigured()
+  return factories[0].universalRoutePrefix(children)
 }
 
 export function useI18n() {

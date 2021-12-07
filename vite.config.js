@@ -3,7 +3,7 @@ import {defineConfig} from 'vite'
 export default defineConfig({
   build: {
     lib: {
-      entry: 'src/i18n.ts',
+      entry: 'src/i18n.js',
       name: 'I18n',
       fileName: format => `i18n.${format}.js`
     },
