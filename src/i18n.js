@@ -145,8 +145,11 @@ export function configureI18n(options) {
   }
 
   function routePrefix(langs, optional, children) {
+    if (optional) {
+      langs = [...langs, '']
+    }
     return {
-      path: `/:${ro.prefixParam}(${langs.join('|')})` + (optional ? '?' : ''),
+      path: `/:${ro.prefixParam}(${langs.join('|')})`,
       children,
       component: {
         setup() {
@@ -320,6 +323,10 @@ export function configureI18n(options) {
 
     universalRoutePrefix(children) {
       return routePrefix(supportedLangs, true, children)
+    },
+
+    catchAll(route) {
+      return {path: ':pathMatch(.+)+', ...route}
     }
   }
 }
