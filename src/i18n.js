@@ -48,17 +48,6 @@ function acceptLanguageToArray(str) {
 }
 
 const injectKey = Symbol()
-const factories = []
-
-function ensureI18nConfigured() {
-  if (!factories.length) {
-    throw new Error('vue-i18n-mini: please call configureI18n() first')
-  }
-
-  if (factories.length > 1) {
-    throw new Error('vue-i18n-mini: more than one configuration found, please use configuration object method directly instead')
-  }
-}
 
 export function configureI18n(options) {
   options = merge({
@@ -179,7 +168,7 @@ export function configureI18n(options) {
     return urlNp + '/'
   }
 
-  const factory = {
+  return {
     async createI18n(ctx = {}) {
       ctx = merge({
         isClient: true,
@@ -331,27 +320,8 @@ export function configureI18n(options) {
 
     universalRoutePrefix(children) {
       return routePrefix(supportedLangs, true, children)
-    },
+    }
   }
-
-  factories.push(factory)
-
-  return factory
-}
-
-export async function createI18n(ctx = {}) {
-  ensureI18nConfigured()
-  return factories[0].createI18n(ctx)
-}
-
-export function routePrefix(lang, children) {
-  ensureI18nConfigured()
-  return factories[0].routePrefix(lang, children)
-}
-
-export function universalRoutePrefix(children) {
-  ensureI18nConfigured()
-  return factories[0].universalRoutePrefix(children)
 }
 
 export function useI18n() {
