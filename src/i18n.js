@@ -59,7 +59,6 @@ export function configureI18n(options) {
       prefixParam: 'lang',
       prefixForDefaultLang: true,
       trailingSlashes: null, // 'always' | 'none' | 'prefix' | null
-      notFoundRouteName: /not.*found/i,
     },
     lodashTemplateOptions: {
       interpolate: /{([\s\S]+?)}/g,
@@ -93,13 +92,6 @@ export function configureI18n(options) {
   const supportedLangs = Object.keys(options.langData)
   const langData = {}
   const langTemplates = {}
-  const notFoundRouteNames = Array.isArray(ro.notFoundRouteName)
-    ? ro.notFoundRouteName
-    : [ro.notFoundRouteName]
-
-  function isNotFound(name) {
-    return notFoundRouteNames.some(el => el instanceof RegExp ? el.test(name) : el === name)
-  }
 
   function langSupported(lang) {
     if (!lang) return false
@@ -148,6 +140,13 @@ export function configureI18n(options) {
     if (optional) {
       langs = [...langs, '']
     }
+
+    children = children.map(
+      r => r.notFound || r.meta?.notFound
+        ? {path: ':pathMatch(.+)+', ...r, meta: {...r.meta, notFound: true}}
+        : r
+    )
+
     return {
       path: `/:${ro.prefixParam}(${langs.join('|')})`,
       children,
@@ -290,7 +289,7 @@ export function configureI18n(options) {
           const path = to.fullPath
           const prefix = to.params[ro.prefixParam] && ensureLangSupported(to.params[ro.prefixParam])
 
-          if (isNotFound(to.name)) {
+          if (to.meta?.notFound) {
             notFound()
           } else {
             if (!ro.prefixForDefaultLang && prefix === options.defaultLang) {
@@ -323,10 +322,6 @@ export function configureI18n(options) {
 
     universalRoutePrefix(children) {
       return routePrefix(supportedLangs, true, children)
-    },
-
-    catchAll(route) {
-      return {path: ':pathMatch(.+)+', ...route}
     }
   }
 }
